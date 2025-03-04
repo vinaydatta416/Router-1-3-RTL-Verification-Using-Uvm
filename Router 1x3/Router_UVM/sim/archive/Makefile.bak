@@ -1,0 +1,47 @@
+# Makefile for Router UVM Project
+RTL = ../rtl/* ../intf/*
+INC = +incdir+../tb +incdir+../test +incdir+../src_agent +incdir+../dst_agent
+SVTB1 = ../tb/top.sv
+SVTB2 = ../test/router_pkg.sv
+work = work #library name
+
+FSDB_PATH = /home/cad/eda/SYNOPSYS/VERDI_2022/verdi/T-2022.06-SP1/share/PLI/VCS/LINUX64
+
+sv_cmp:
+	vcs -l vcs.log -timescale=1ns/1ps -sverilog -ntb_opts uvm -debug_access+all -full64 -kdb -lca -P $(FSDB_PATH)/novas.tab $(FSDB_PATH)/pli.a $(RTL) $(INC) $(SVTB2) $(SVTB1)
+
+run_test_top: clean sv_cmp
+	./simv -a vcs.log +fsdbfile+wave_top.fsdb -cm_dir ./mem_cov_top +ntb_random_seed_automatic +UVM_TESTNAME=router_base_test
+	#urg -dir mem_cov_top.vdb -format both -report urgReportTop
+
+run_test_small:	clean  sv_cmp
+	./simv -a vcs.log +fsdbfile+wave1.fsdb -cm_dir ./mem_cov1 +ntb_random_seed_automatic +UVM_TESTNAME=small_packet_test 
+	urg -dir mem_cov1.vdb -format both -report urgReport1
+
+run_test_medium: clean sv_cmp
+	./simv -a vcs.log +fsdbfile+wave_medium.fsdb -cm_dir ./mem_cov_medium +ntb_random_seed_automatic +UVM_TESTNAME=medium_packet_test
+	#urg -dir mem_cov_medium.vdb -format both -report urgReportMedium
+
+run_test_big: clean sv_cmp
+	./simv -a vcs.log +fsdbfile+wave_big.fsdb -cm_dir ./mem_cov_big +ntb_random_seed_automatic +UVM_TESTNAME=big_packet_test
+	#urg -dir mem_cov_big.vdb -format both -report urgReportBig
+
+view_wave_small: 
+	verdi -ssf wave_small.fsdb
+
+clean:
+	rm -fr simv* csrc* *.tmp *.vpd *.vdb *.key *.log *hdrs.h urgReport* *.fsdb novas* verdi*
+	clear
+
+help:
+	@echo "=============================================================================="
+	@echo ""
+	@echo "THIS IS THE MAKEFILE HELP"
+	@echo ""
+	@echo "run_test_top 	: Cleans, Compiles and Executes the router_base_test, prints the topology"
+	@echo "run_test_small 	: Cleans, Compiles and Executes the small_packet_test, length inside [1:20]"
+	@echo "run_test_medium : Cleans, Compiles and Executes the medium_packet_test, length inside [21:40]"
+	@echo "run_test_big 	: Cleans, Compiles and Executes the big_packet_test, length inside [41:63]"
+	@echo ""
+	@echo "=============================================================================="
+
